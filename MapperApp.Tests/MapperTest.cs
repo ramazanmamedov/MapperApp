@@ -87,4 +87,26 @@ public class MapperTest
             Assert.Equal("LastThirst", el4.LastName); 
         });
     }
+
+    [Fact]
+    public void Map_Book_Class_To_BookDto_Record_Returns_EqualProperties()
+    {
+        var book = new Book
+        {
+            Author = "Terry Pratchett",
+            Name = "Guards! Guards!",
+            Text = "Sir Samuel...",
+            PublishHouse = "Buamaga"
+        };
+        var builder = new MapperConfigurationBuilder();
+        builder.CreateMap<Book, BookDto>();
+        var mapperConfig = builder.Build();
+        var mapper = new Mapper(mapperConfig, ArraySegment<ICustomTypeMapper>.Empty);
+        var dto = mapper.Map<BookDto>(book);
+        
+        Assert.Equal(book.Author, dto.Author);
+        Assert.Equal(book.Name, dto.Name);
+        Assert.Equal(book.Text, dto.Text);
+        Assert.Equal(book.PublishHouse, dto.PublishHouse);
+    }
 }

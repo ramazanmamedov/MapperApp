@@ -32,11 +32,51 @@ public class Mapper : IMapper
         if (TryCustomMap(destType, source, out var customResult)) 
             return customResult;
 
-        var result = Activator.CreateInstance(destType);
+        var result = CreateInstance(destType, sourceProps, source);
         var config = _configuration.TypeMappings.FirstOrDefault(x => x.SourceType == source.GetType() && x.DestType == destType);
         MapProperties(source, destProps, config, sourceProps, result);
 
         return result!;
+    }
+
+    private object? CreateInstance(Type destType, PropertyInfo[] sourceProperties, object source)
+    {
+       var ctor = destType.GetConstructors()
+            .First(x => x.GetParameters().All(param => CanResolve(param, sourceProperties)));
+
+       var parameters = ctor.GetParameters()
+           .Select(param => Resolve(param, sourceProperties, source))
+           .ToArray();
+       
+       return ctor.Invoke(parameters);
+    }
+
+    private object Resolve(ParameterInfo parameterInfo, PropertyInfo[] sourceProperties, object source)
+    {
+        var result = ResolveInternal(parameterInfo, sourceProperties, source);
+        if (result.GetType() != parameterInfo.ParameterType)
+            return Map(parameterInfo.ParameterType, result);
+
+        return result;
+    }
+
+    private static object ResolveInternal(ParameterInfo parameterInfo, PropertyInfo[] sourceProperties, object source)
+    {
+        var prop = sourceProperties.FirstOrDefault(x => x.Name == parameterInfo.Name);
+        if (prop != null)
+            return prop.GetValue(source);
+
+        if (parameterInfo.IsOptional)
+            return parameterInfo.DefaultValue;
+        throw new InvalidOperationException();
+    }
+
+    private bool CanResolve(ParameterInfo parameterInfo, PropertyInfo[] sourceProperties)
+    {
+        if (parameterInfo.IsOptional)
+            return true;
+
+        return sourceProperties.Any(x => x.Name == parameterInfo.Name);
     }
 
     private void MapProperties(object source, PropertyInfo[] destProps, TypeMappingConfiguration? config,
