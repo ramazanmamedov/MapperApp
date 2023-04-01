@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 namespace MapperApp;
 
 public record MapperConfiguration(IEnumerable<TypeMappingConfiguration> TypeMappings);
-public record TypeMappingConfiguration(Type SourceType, Type DestType, IEnumerable<MemberMappingConfiguration> MemberMappings);
+public record TypeMappingConfiguration(Type SourceType, Type DestType, IEnumerable<MemberMappingConfiguration> MemberMappings  );
 public record MemberMappingConfiguration(string MemberName, IMappingAction Action);
 public interface IMappingAction{}
 
@@ -18,7 +18,7 @@ public interface IMemberMappingConfigurationBuilder
 public class MemberMappingConfigurationBuilder<TSource, TMember> : IMemberMappingConfigurationBuilder
 {
     private readonly string _memberName;
-    private bool _ignore = false;
+    private bool _ignore;
     private Func<TSource, TMember> _mapAction;
 
     public MemberMappingConfigurationBuilder(string memberName)
