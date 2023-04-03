@@ -2,16 +2,17 @@ using System.Reflection;
 
 namespace MapperApp;
 
-public class Mapper : IMapper
+public class ReflectionBasedMapper : IMapper
 {
     private readonly MapperConfiguration _configuration;
     private readonly IEnumerable<ICustomTypeMapper> _customTypeMappers;
 
-    public Mapper(MapperConfiguration configuration, IEnumerable<ICustomTypeMapper> customTypeMappers)
+    public ReflectionBasedMapper(MapperConfiguration configuration, IEnumerable<ICustomTypeMapper> customTypeMappers)
     {
         _configuration = configuration;
         _customTypeMappers = customTypeMappers.ToList() ;
     }
+    
     public TDest Map<TDest, TSource>(TSource? source) where TDest : new()
         => Map<TDest>(source);
 
@@ -79,8 +80,7 @@ public class Mapper : IMapper
         return sourceProperties.Any(x => x.Name == parameterInfo.Name);
     }
 
-    private void MapProperties(object source, PropertyInfo[] destProps, TypeMappingConfiguration? config,
-        PropertyInfo[] sourceProps, object? result)
+    private void MapProperties(object source, PropertyInfo[] destProps, TypeMappingConfiguration? config, PropertyInfo[] sourceProps, object? result)
     {
         foreach (var destProp in destProps)
         {
@@ -123,7 +123,7 @@ public class Mapper : IMapper
             return true;
         }
 
-        o = null;
+        o = null!;
         return false;
     }
 }
@@ -131,7 +131,7 @@ public class Mapper : IMapper
 public interface ICustomTypeMapper
 {
     bool CanMap(Type source, Type dest);
-    object Map(Mapper mapper, Type dest, object source);
+    object Map(ReflectionBasedMapper reflectionBasedMapper, Type dest, object source);
 }
 
 public class ListToArrayMapper : ICustomTypeMapper
@@ -141,12 +141,12 @@ public class ListToArrayMapper : ICustomTypeMapper
         return dest.IsSZArray && (source.IsGenericType && source.GetGenericTypeDefinition() == typeof(List<>));
     }
 
-    public object Map(Mapper mapper, Type dest, object source)
+    public object Map(ReflectionBasedMapper reflectionBasedMapper, Type dest, object source)
     {
         var method = GetType().GetMethod(nameof(MapInternal), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(source.GetType().GetGenericArguments()[0], dest.GetElementType()!);
 
-        return method.Invoke(null, new object[] {mapper, source})!;
+        return method.Invoke(null, new[] {reflectionBasedMapper, source})!;
     }
 
     private static TDest[] MapInternal<TSource, TDest>(IMapper mapper, List<TSource> sources) =>

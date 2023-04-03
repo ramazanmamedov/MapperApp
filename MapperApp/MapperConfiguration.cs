@@ -3,10 +3,9 @@ using System.Linq.Expressions;
 namespace MapperApp;
 
 public record MapperConfiguration(IEnumerable<TypeMappingConfiguration> TypeMappings);
-public record TypeMappingConfiguration(Type SourceType, Type DestType, IEnumerable<MemberMappingConfiguration> MemberMappings  );
+public record TypeMappingConfiguration(Type SourceType, Type DestType, IEnumerable<MemberMappingConfiguration> MemberMappings );
 public record MemberMappingConfiguration(string MemberName, IMappingAction Action);
 public interface IMappingAction{}
-
 public record IgnoreMappingAction : IMappingAction{}
 public record MapAction(Delegate Action) : IMappingAction{}
 
